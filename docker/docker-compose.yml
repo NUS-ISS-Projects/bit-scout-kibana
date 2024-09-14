@@ -1,7 +1,7 @@
 version: '3.7'
 
 services:
-    # User service
+  # User service
   bit-scount-user-service:
     image: bit-scount-user-service:1.0
     hostname: bit-scount-user-service
@@ -11,7 +11,7 @@ services:
     ports:
       - "8081:8081"
 
-  #notification
+  # Notification
   bit-scount-backend-notification:
     image: bit-scount-backend-notification:1.0
     hostname: bit-scount-backend-notification
@@ -21,7 +21,7 @@ services:
     ports:
       - "8082:8082"
 
-  #watchlist
+  # Watchlist
   bit-scount-backend-watchlist:
     image: bit-scount-backend-watchlist:1.0
     hostname: bit-scount-backend-watchlist
@@ -31,7 +31,7 @@ services:
     ports:
       - "8083:8083"
 
-
+  # Elasticsearch
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:7.6.0
     hostname: elasticsearch
@@ -44,6 +44,7 @@ services:
       - "9200:9200"
       - "9300:9300"
 
+  # Kibana
   kibana:
     image: docker.elastic.co/kibana/kibana:7.6.0
     hostname: kibana
@@ -56,25 +57,48 @@ services:
       - logmonnet
     ports:
       - "5601:5601"
-    links:
-      - elasticsearch
     depends_on:
       - elasticsearch
-  
-  logstash:
+
+  # Logstash instance 1
+  logstash1:
     build: ../logstash
-    hostname: logstash
-    container_name: logstash
+    hostname: logstash1
+    container_name: logstash1
     networks:
       - logmonnet
-    command: logstash -f /conf/logstash-maid-account-manager.conf
+    command: logstash -f /logstash-bit-scount-backend-notification.conf
     ports:
       - "5044:5044"
-    links:
+    depends_on:
       - elasticsearch
+
+  # Logstash instance 2
+  logstash2:
+    build: ../logstash
+    hostname: logstash2
+    container_name: logstash2
+    networks:
+      - logmonnet
+    command: logstash -f /logstash-bit-scount-backend-watchlist.conf
+    ports:
+      - "5045:5045"
+    depends_on:
+      - elasticsearch
+
+  # Logstash instance 3
+  logstash3:
+    build: ../logstash
+    hostname: logstash3
+    container_name: logstash3
+    networks:
+      - logmonnet
+    command: logstash -f /logstash-bit-scount-user-service.conf
+    ports:
+      - "5046:5046"
     depends_on:
       - elasticsearch
 
 networks:
   logmonnet:
-    driver: "bridge"
+    driver: bridge
